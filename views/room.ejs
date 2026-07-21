@@ -1,0 +1,87 @@
+<%- include('partials/head') %>
+<!-- Custom styling for the collaborative study workspace -->
+<link rel="stylesheet" href="/css/room.css">
+<%- include('partials/navbar') %>
+
+<main class="room-workspace" data-room-id="<%= roomId %>">
+  <!-- Room information header -->
+  <header class="room-banner">
+    <div class="room-info">
+      <h1 id="workspace-title">Study Room</h1>
+      <span class="room-badge" id="workspace-topic">Topic: Loading...</span>
+      <span class="code-badge">Join Code: <strong id="workspace-code">...</strong></span>
+    </div>
+    <div class="user-info">
+      <span>Active Members: <span id="members-count">0</span></span>
+    </div>
+  </header>
+
+  <div class="workspace-grid">
+    <!-- Chat component -->
+    <section class="panel chat-panel">
+      <div class="panel-header">
+        <h3>💬 Room Chat</h3>
+      </div>
+      <div class="panel-body messages-display" id="chat-messages">
+        <!-- Messages append here dynamically -->
+      </div>
+      <div id="typing-indicator" class="typing-indicator-bar"></div>
+      <form id="chat-input-form" class="panel-footer-form">
+        <input type="text" id="chat-message-input" required placeholder="Type a message...">
+        <button type="submit">Send</button>
+      </form>
+    </section>
+
+    <!-- Shared Notes component -->
+    <section class="panel notes-panel">
+      <div class="panel-header">
+        <h3>📝 Shared Study Notes</h3>
+        <span class="status-note" id="notes-status">Saved</span>
+      </div>
+      <div class="panel-body text-editor-area">
+        <textarea id="shared-notes-editor" placeholder="Start typing shared notes here. Content is synced automatically..."></textarea>
+      </div>
+      <div class="panel-footer notes-editor-info">
+        <span id="notes-last-edited">Last edited by: --</span>
+      </div>
+    </section>
+
+    <!-- AI Helper panel -->
+    <section class="panel ai-panel">
+      <div class="panel-header">
+        <h3>🤖 AI Study Assistant</h3>
+      </div>
+      <div class="panel-body ai-interactions">
+        <!-- Room Summarizer -->
+        <div class="ai-feature-block">
+          <h4>Room Summary</h4>
+          <button id="ai-summarize-btn" class="btn-ai">Summarize Discussion</button>
+          <div id="ai-summary-output" class="ai-output-box">Summary outputs will appear here...</div>
+        </div>
+
+        <!-- MCQs Generator -->
+        <div class="ai-feature-block">
+          <h4>Concept Practice Quiz</h4>
+          <button id="ai-quiz-btn" class="btn-ai">Generate 5 MCQs</button>
+          <div id="ai-quiz-output" class="ai-output-box">Generate practice questions from your notes.</div>
+        </div>
+
+        <!-- Doubt Resolver -->
+        <div class="ai-feature-block">
+          <h4>Ask a Tutor</h4>
+          <form id="ai-doubt-form">
+            <input type="text" id="ai-doubt-input" required placeholder="Ask about a concept...">
+            <button type="submit" class="btn-ai">Explain</button>
+          </form>
+          <div id="ai-doubt-output" class="ai-output-box">Answers will appear here...</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- Load room-specific scripts -->
+<script src="/js/chat.js"></script>
+<script src="/js/notes.js"></script>
+<script src="/js/ai.js"></script>
+<%- include('partials/footer') %>

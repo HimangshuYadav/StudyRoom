@@ -1,0 +1,54 @@
+<%- include('partials/head') %>
+<!-- Custom styling for dashboard page -->
+<link rel="stylesheet" href="/css/dashboard.css">
+<%- include('partials/navbar') %>
+
+<main class="dashboard-wrapper">
+  <div class="dashboard-header-banner">
+    <h1>Study Room Dashboard</h1>
+    <p>Create a new workspace or enter an existing one using a 6-character code</p>
+  </div>
+
+  <div class="dashboard-grid">
+    <!-- Creation and Joining forms sidebar -->
+    <aside class="dashboard-sidebar">
+      <div class="control-card">
+        <h3>Create a Study Room</h3>
+        <form id="create-room-form">
+          <div class="form-group">
+            <label for="room-name">Room Name</label>
+            <input type="text" id="room-name" required placeholder="CS101 Study Session">
+          </div>
+          <div class="form-group">
+            <label for="room-topic">Topic</label>
+            <input type="text" id="room-topic" required placeholder="Data Structures">
+          </div>
+          <button type="submit" class="btn-sidebar">Create Room</button>
+        </form>
+      </div>
+
+      <div class="control-card">
+        <h3>Join via Code</h3>
+        <form id="join-room-form">
+          <div class="form-group">
+            <label for="join-code">6-Character Code</label>
+            <input type="text" id="join-code" required maxlength="6" placeholder="ABC123">
+          </div>
+          <button type="submit" class="btn-sidebar secondary">Join Room</button>
+        </form>
+      </div>
+    </aside>
+
+    <!-- Main area showing list of active public rooms -->
+    <section class="rooms-section">
+      <h2>Active Public Rooms</h2>
+      <div id="rooms-list" class="rooms-grid-container">
+        <!-- Rendered dynamically by public/js/dashboard.js -->
+        <p class="placeholder-text">Loading active rooms...</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<script src="/js/dashboard.js"></script>
+<%- include('partials/footer') %>

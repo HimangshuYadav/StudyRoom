@@ -1,0 +1,32 @@
+<%- include('partials/head') %>
+<%- include('partials/navbar') %>
+
+<main class="auth-container">
+  <div class="auth-card">
+    <div class="auth-header">
+      <h2>Create Account</h2>
+      <p>Join study groups and collaborate in real-time</p>
+    </div>
+    <form id="signup-form" class="auth-form">
+      <div class="form-group">
+        <label for="name">Full Name</label>
+        <input type="text" id="name" name="name" required placeholder="John Doe">
+      </div>
+      <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" required placeholder="name@domain.com">
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn-submit">Register</button>
+    </form>
+    <div class="auth-footer">
+      <p>Already have an account? <a href="/login">Log in here</a></p>
+    </div>
+  </div>
+</main>
+
+<script src="/js/auth.js"></script>
+<%- include('partials/footer') %>

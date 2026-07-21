@@ -1,0 +1,33 @@
+{
+  "name": "studyroom",
+  "version": "1.0.0",
+  "description": "Collaborative study room app with Socket.io and Groq AI features",
+  "main": "server/server.js",
+  "scripts": {
+    "start": "node server/server.js",
+    "dev": "nodemon server/server.js"
+  },
+  "keywords": [
+    "studyroom",
+    "socket.io",
+    "express",
+    "ejs",
+    "groq-ai",
+    "mongoose"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.19.2",
+    "groq-sdk": "^0.3.3",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.3.1",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}

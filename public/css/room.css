@@ -1,0 +1,318 @@
+/* --- StudyRoom Workspace Layout CSS --- */
+
+.room-workspace {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 1.5rem 2rem;
+  max-width: 1600px;
+  width: 100%;
+  margin: 0 auto;
+  gap: 1.5rem;
+}
+
+.room-banner {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.room-info {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.room-info h1 {
+  font-family: var(--font-header);
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.room-badge {
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-primary);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.code-badge {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+.code-badge strong {
+  font-family: monospace;
+  color: var(--text-primary);
+  background: var(--bg-primary);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+.user-info {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+/* Workspace Panels Grid */
+.workspace-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr 380px;
+  gap: 1.5rem;
+  flex: 1;
+  min-height: 600px;
+}
+
+@media (max-width: 1200px) {
+  .workspace-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .ai-panel {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Panel Structure */
+.panel {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.panel-header {
+  border-bottom: 1px solid var(--border-color);
+  padding: 1rem 1.25rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-header h3 {
+  font-family: var(--font-header);
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.panel-body {
+  flex: 1;
+  padding: 1.25rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Chat Panel Specifics */
+.messages-display {
+  max-height: 480px;
+}
+
+.chat-msg {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  max-width: 85%;
+  align-self: flex-start;
+  background: var(--bg-tertiary);
+  padding: 0.65rem 0.85rem;
+  border-radius: 0 12px 12px 12px;
+  font-size: 0.9rem;
+}
+
+.chat-msg.mine {
+  align-self: flex-end;
+  background: var(--accent-primary);
+  border-radius: 12px 12px 0 12px;
+}
+
+.chat-msg-sender {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--accent-secondary);
+}
+
+.chat-msg.mine .chat-msg-sender {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.chat-msg-time {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  align-self: flex-end;
+}
+
+.typing-indicator-bar {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  padding: 0 1.25rem 0.5rem 1.25rem;
+  font-style: italic;
+  min-height: 20px;
+}
+
+.panel-footer-form {
+  border-top: 1px solid var(--border-color);
+  padding: 0.75rem 1rem;
+  display: flex;
+  gap: 0.75rem;
+}
+
+.panel-footer-form input {
+  flex: 1;
+  padding: 0.6rem 0.85rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  outline: none;
+  font-size: 0.9rem;
+}
+
+.panel-footer-form input:focus {
+  border-color: var(--accent-primary);
+}
+
+.panel-footer-form button {
+  background: var(--accent-primary);
+  color: #fff;
+  border: none;
+  padding: 0.6rem 1.2rem;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.panel-footer-form button:hover {
+  background: var(--accent-hover);
+}
+
+/* Notes Panel Specifics */
+.text-editor-area {
+  padding: 0;
+}
+
+.text-editor-area textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 400px;
+  background: transparent;
+  border: none;
+  resize: none;
+  outline: none;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  line-height: 1.6;
+  padding: 1.5rem;
+}
+
+.notes-editor-info {
+  border-top: 1px solid var(--border-color);
+  padding: 0.75rem 1.25rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.status-note {
+  font-size: 0.75rem;
+  background: rgba(16, 185, 129, 0.15);
+  color: #10b981;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+}
+
+/* AI Assistant Panel Specifics */
+.ai-interactions {
+  gap: 1.5rem;
+}
+
+.ai-feature-block {
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 1.5rem;
+}
+
+.ai-feature-block:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.ai-feature-block h4 {
+  font-family: var(--font-header);
+  font-size: 0.95rem;
+  margin-bottom: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.btn-ai {
+  background: var(--glass-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  width: 100%;
+  margin-bottom: 0.75rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.btn-ai:hover {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--accent-primary);
+}
+
+.ai-output-box {
+  background: rgba(11, 15, 25, 0.5);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 0.85rem;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  min-height: 80px;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+#ai-doubt-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+#ai-doubt-form input {
+  flex: 1;
+  padding: 0.5rem;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  outline: none;
+}
+
+#ai-doubt-form button {
+  width: 80px;
+  margin-bottom: 0;
+}
