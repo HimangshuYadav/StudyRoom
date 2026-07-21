@@ -1,97 +1,121 @@
+const crypto = require('crypto');
 const Room = require('../models/Room');
 
 /**
- * Creates a new collaborative study room.
- * Generates a random unique 6-character join code and sets up initial membership.
- *
- * @function createRoom
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} req.body - Form fields.
- * @param {string} req.body.name - The name of the room.
- * @param {string} req.body.topic - The primary topic/subject of the room.
- * @param {Object} req.user - Decoded logged-in user profile from middleware.
- * @param {string} req.user.id - The unique user ID of the creator.
- * @param {Object} res - Express response object.
- * @returns {void} Responds with the created room JSON document or an error.
- *
- * Implementation Steps:
- * 1. Read room name and topic from req.body.
- * 2. Generate a random 6-character alphanumeric joinCode string.
- * 3. Construct a new Room document with createdBy set to req.user.id, and members array initialized with [req.user.id].
- * 4. Save the room document in MongoDB.
- * 5. Return the created room object with status 201 via res.json.
+ * Generates a random 6-character alphanumeric join code (uppercase + digits).
  */
+function generateJoinCode(length = 6) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  const bytes = crypto.randomBytes(length);
+  for (let i = 0; i < length; i++) {
+    code += chars[bytes[i] % chars.length];
+  }
+  return code;
+}
+
+/**
+ * Ensures the generated join code doesn't collide with an existing room.
+ */
+async function generateUniqueJoinCode() {
+  let code;
+  let existing;
+  do {
+    code = generateJoinCode();
+    existing = await Room.findOne({ joinCode: code });
+  } while (existing);
+  return code;
+}
+
 async function createRoom(req, res) {
-  // TODO: generate joinCode, create Room doc with creator and member, save and return
-  return res.status(201).json({ id: 'mock-room-id', name: req.body.name, joinCode: 'ABC123' });
+  try {
+    const { name, topic } = req.body;
+
+    if (!name || !topic) {
+      return res.status(400).json({ error: 'Room name and topic are required.' });
+    }
+
+    const joinCode = await generateUniqueJoinCode();
+
+    const room = new Room({
+      name,
+      topic,
+      joinCode,
+      createdBy: req.user.id,
+      members: [req.user.id]
+    });
+
+    await room.save();
+
+    return res.status(201).json(room);
+  } catch (err) {
+    console.error('createRoom error:', err);
+    return res.status(500).json({ error: 'Failed to create room.' });
+  }
 }
 
-/**
- * Adds the logged-in user to an existing study room using a join code.
- *
- * @function joinRoom
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} req.body - Form fields.
- * @param {string} req.body.joinCode - The unique 6-character string associated with a room.
- * @param {Object} req.user - Decoded logged-in user profile from middleware.
- * @param {string} req.user.id - The user ID joining the room.
- * @param {Object} res - Express response object.
- * @returns {void} Responds with the updated room JSON document, or a 404/error.
- *
- * Implementation Steps:
- * 1. Find the Room in MongoDB matching the query joinCode.
- * 2. If no room matches, return a 404 Not Found error response.
- * 3. Check if req.user.id is already present in room.members array.
- * 4. If not present, push req.user.id into the members array and save the document.
- * 5. Return the updated room JSON object.
- */
 async function joinRoom(req, res) {
-  // TODO: find room by joinCode, check/add user ID to members list, return room
-  return res.json({ id: 'mock-room-id', joinCode: req.body.joinCode, members: [req.user?.id || 'mock-user-id'] });
+  try {
+    const { joinCode } = req.body;
+
+    if (!joinCode) {
+      return res.status(400).json({ error: 'joinCode is required.' });
+    }
+
+    const room = await Room.findOne({ joinCode });
+
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found.' });
+    }
+
+    const alreadyMember = room.members.some(
+      (memberId) => memberId.toString() === req.user.id
+    );
+
+    if (!alreadyMember) {
+      room.members.push(req.user.id);
+      await room.save();
+    }
+
+    return res.json(room);
+  } catch (err) {
+    console.error('joinRoom error:', err);
+    return res.status(500).json({ error: 'Failed to join room.' });
+  }
 }
 
-/**
- * Retrieves a single room details populating member profiles.
- *
- * @function getRoomById
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} req.params - URL parameter attributes.
- * @param {string} req.params.id - The Room ID to retrieve.
- * @param {Object} res - Express response object.
- * @returns {void} Responds with the populated room details, or a 404 error.
- *
- * Implementation Steps:
- * 1. Retrieve the room ID from req.params.id.
- * 2. Find the Room by ID in the database and chain .populate('members') to load member details.
- * 3. If no room is found, return 404 error.
- * 4. Return the populated room JSON object.
- */
 async function getRoomById(req, res) {
-  // TODO: find room by ID, populate members fields, return room JSON
-  return res.json({ id: req.params.id, name: 'Mock Room', members: [] });
+  try {
+    const { id } = req.params;
+
+    const room = await Room.findById(id).populate('members', '-password');
+
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found.' });
+    }
+
+    return res.json(room);
+  } catch (err) {
+    console.error('getRoomById error:', err);
+    // Handle malformed ObjectId gracefully as a 404 rather than a 500
+    if (err.name === 'CastError') {
+      return res.status(404).json({ error: 'Room not found.' });
+    }
+    return res.status(500).json({ error: 'Failed to fetch room.' });
+  }
 }
 
-/**
- * Lists public collaborative study rooms.
- *
- * @function listPublicRooms
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} res - Express response object.
- * @returns {void} Responds with a JSON array of rooms.
- *
- * Implementation Steps:
- * 1. Fetch Room documents from the database.
- * 2. Sort rooms by createdAt in descending order.
- * 3. Apply a limit of 50 documents.
- * 4. Return the retrieved array of rooms as a JSON response.
- */
 async function listPublicRooms(req, res) {
-  // TODO: fetch all rooms up to limit 50 sorted desc, return array
-  return res.json([]);
+  try {
+    const rooms = await Room.find()
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.json(rooms);
+  } catch (err) {
+    console.error('listPublicRooms error:', err);
+    return res.status(500).json({ error: 'Failed to fetch rooms.' });
+  }
 }
 
 module.exports = {

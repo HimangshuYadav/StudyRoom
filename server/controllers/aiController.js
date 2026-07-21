@@ -3,86 +3,126 @@ const Note = require('../models/Note');
 const groqClient = require('../utils/groqClient');
 
 /**
- * Generates an AI summary of a study room by compiling recent message history and the room's notes.
- *
- * @function summarizeRoom
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} req.body - Payload sent by client.
- * @param {string} req.body.roomId - The ID of the study room to summarize.
- * @param {Object} res - Express response object.
- * @returns {void} Responds with a JSON object containing the room summary.
- *
- * Implementation Steps:
- * 1. Read roomId from req.body.
- * 2. Fetch the recent 50 messages for this roomId from the Message model.
- * 3. Fetch the latest room Note document for this roomId.
- * 4. Combine the text from the messages and the note content into a comprehensive context prompt.
- * 5. Build an instruction prompting the AI model to output a bulleted summary of active discussion topics and notes.
- * 6. Send the prompt to groqClient.getCompletion(prompt).
- * 7. Return the summary text in the JSON response as { summary: string }.
+ * Strips markdown code fences (```json ... ``` or ``` ... ```) that LLMs
+ * sometimes wrap around JSON responses, so the remaining text can be parsed safely.
  */
+function stripCodeFences(text) {
+  return text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/```\s*$/i, '')
+    .trim();
+}
+
 async function summarizeRoom(req, res) {
-  // TODO: fetch messages/notes, build prompt, query groq, return response JSON
-  return res.json({ summary: 'Mock Summary: The study group discussed dynamic routing and Mongoose model hooks.' });
+  try {
+    const { roomId } = req.body;
+
+    if (!roomId) {
+      return res.status(400).json({ error: 'roomId is required.' });
+    }
+
+    const [messages, note] = await Promise.all([
+      Message.find({ roomId }).sort({ createdAt: -1 }).limit(50),
+      Note.findOne({ roomId })
+    ]);
+
+    // Messages were fetched newest-first for the limit; reverse to chronological order for the prompt
+    const messageText = messages
+      .slice()
+      .reverse()
+      .map((m) => `${m.sender ? m.sender + ': ' : ''}${m.content}`)
+      .join('\n');
+
+    const noteText = note?.content || '';
+
+    const prompt = `You are an assistant summarizing a study group's activity.
+
+Recent chat messages:
+${messageText || '(no messages yet)'}
+
+Shared room notes:
+${noteText || '(no notes yet)'}
+
+Based on the above, write a concise bulleted summary of the active discussion topics and key points from the notes. Respond with bullet points only, no preamble.`;
+
+    const summary = await groqClient.getCompletion(prompt);
+
+    return res.json({ summary: summary.trim() });
+  } catch (err) {
+    console.error('summarizeRoom error:', err);
+    return res.status(500).json({ error: 'Failed to generate room summary.' });
+  }
 }
 
-/**
- * Generates a set of 5 multiple-choice questions (MCQs) based on the room study context.
- *
- * @function generateQuestions
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} req.body - Payload sent by client.
- * @param {string} req.body.topic - The subject of focus.
- * @param {string} req.body.roomId - The ID of the room to pull context from.
- * @param {Object} res - Express response object.
- * @returns {void} Responds with a JSON array of generated multiple choice questions.
- *
- * Implementation Steps:
- * 1. Extract topic and roomId from req.body.
- * 2. Fetch the room notes context from the Note model.
- * 3. Construct a prompt instructing the AI to write exactly 5 multiple choice questions on the topic.
- * 4. Request the AI to format the response strictly as valid JSON: [{"question": string, "options": string[], "answer": string}].
- * 5. Call groqClient.getCompletion(prompt).
- * 6. Strip any markdown block fences (e.g. ```json ... ```) from the response text.
- * 7. Parse the cleaned response into a Javascript array and send it back as { questions: [...] }.
- */
 async function generateQuestions(req, res) {
-  // TODO: fetch notes/context, build MCQ prompt, query groq, parse JSON response, return response array
-  return res.json({
-    questions: [
-      {
-        question: 'Mock Question: What does Mongoose use to define schemas?',
-        options: ['Schema Class', 'JSON text', 'SQL files', 'No-SQL commands'],
-        answer: 'Schema Class'
-      }
-    ]
-  });
+  try {
+    const { topic, roomId } = req.body;
+
+    if (!topic) {
+      return res.status(400).json({ error: 'topic is required.' });
+    }
+
+    let noteText = '';
+    if (roomId) {
+      const note = await Note.findOne({ roomId });
+      noteText = note?.content || '';
+    }
+
+    const prompt = `You are a quiz generator for a study app.
+
+Topic: ${topic}
+${noteText ? `\nRelevant room notes for additional context:\n${noteText}\n` : ''}
+Write exactly 5 multiple choice questions on this topic. Each question must have exactly 4 options and one correct answer.
+
+Respond with ONLY valid JSON in this exact format, with no markdown fences and no extra text:
+[{"question": string, "options": string[], "answer": string}]`;
+
+    const raw = await groqClient.getCompletion(prompt);
+    const cleaned = stripCodeFences(raw);
+
+    let questions;
+    try {
+      questions = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error('generateQuestions parse error:', parseErr, 'raw:', raw);
+      return res.status(502).json({ error: 'AI returned an unparseable response. Please try again.' });
+    }
+
+    return res.json({ questions });
+  } catch (err) {
+    console.error('generateQuestions error:', err);
+    return res.status(500).json({ error: 'Failed to generate questions.' });
+  }
 }
 
-/**
- * Resolves student doubt/questions by providing a tutor-like interactive explanation.
- *
- * @function explainDoubt
- * @async
- * @param {Object} req - Express request object.
- * @param {Object} req.body - Payload sent by client.
- * @param {string} req.body.question - The question/doubt query from the user.
- * @param {string} req.body.roomId - The ID of the room (for context).
- * @param {Object} res - Express response object.
- * @returns {void} Responds with the AI's step-by-step tutoring explanation.
- *
- * Implementation Steps:
- * 1. Extract the question and roomId from req.body.
- * 2. Optionally fetch room notes content from the Note model to align explanation with room topics.
- * 3. Construct a prompt presenting the user's doubt as a tutoring scenario, instructing the AI to provide a friendly, step-by-step resolution.
- * 4. Call groqClient.getCompletion(prompt).
- * 5. Return the resulting explanation in the response as { explanation: string }.
- */
 async function explainDoubt(req, res) {
-  // TODO: fetch context, build tutoring prompt, query groq, return response JSON
-  return res.json({ explanation: 'Mock Explanation: Mongoose schemas are defined as instances of mongoose.Schema. They allow you to outline fields, validation, and middleware hook options.' });
+  try {
+    const { question, roomId } = req.body;
+
+    if (!question) {
+      return res.status(400).json({ error: 'question is required.' });
+    }
+
+    let noteText = '';
+    if (roomId) {
+      const note = await Note.findOne({ roomId });
+      noteText = note?.content || '';
+    }
+
+    const prompt = `You are a friendly, patient tutor helping a student with a doubt.
+${noteText ? `\nFor context, here are the study group's notes on the current topic:\n${noteText}\n` : ''}
+Student's question: ${question}
+
+Provide a clear, step-by-step explanation that resolves the student's doubt. Keep the tone encouraging and easy to follow.`;
+
+    const explanation = await groqClient.getCompletion(prompt);
+
+    return res.json({ explanation: explanation.trim() });
+  } catch (err) {
+    console.error('explainDoubt error:', err);
+    return res.status(500).json({ error: 'Failed to generate explanation.' });
+  }
 }
 
 module.exports = {
