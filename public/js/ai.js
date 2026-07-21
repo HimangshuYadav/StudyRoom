@@ -1,83 +1,153 @@
 /**
- * Requests an AI summary of the workspace chat and documents, updating the display card with the outcome.
- *
- * @function handleSummarize
- * @param {string} roomId - The database reference ID of the collaborative room.
- * @returns {void}
- *
- * Implementation Steps:
- * 1. Find the '#ai-summary-output' placeholder block and set loading text.
- * 2. Dispatch a POST fetch to '/api/ai/summarize' passing roomId in body, along with JWT token headers.
- * 3. Extract the returned summary text from the JSON response.
- * 4. Update the innerText of the summary card displaying the AI response.
+ * Requests an AI summary of the workspace chat and documents.
  */
-function handleSummarize(roomId) {
-  // TODO: fetch POST /api/ai/summarize, extract response, update DOM
-}
+async function handleSummarize(roomId) {
+  const output = document.getElementById("ai-summary-output");
+  if (!output) return;
 
-/**
- * Triggers the AI model to generate 5 practice multiple-choice questions matching notes.
- *
- * @function handleGenerateQuestions
- * @param {string} roomId - The database reference ID of the collaborative room.
- * @returns {void}
- *
- * Implementation Steps:
- * 1. Find the '#ai-quiz-output' container and set loading status.
- * 2. Send POST request to '/api/ai/questions' passing roomId and topic headers.
- * 3. Retrieve the JSON list of questions.
- * 4. Render the list of questions, option lists, and answer reveals dynamically in the quiz container.
- */
-function handleGenerateQuestions(roomId) {
-  // TODO: fetch POST /api/ai/questions, parse array, construct and render HTML structures in DOM
-}
+  output.innerText = "Generating summary...";
 
-/**
- * Submits a concept doubt query to AI tutor and displays the explanations.
- *
- * @function handleExplainDoubt
- * @param {string} roomId - The database reference ID of the collaborative room.
- * @param {string} questionText - The plain text question/doubt query.
- * @returns {void}
- *
- * Implementation Steps:
- * 1. Locate the '#ai-doubt-output' card and display loading feedback.
- * 2. Send POST query to '/api/ai/explain' carrying roomId and doubt questions.
- * 3. Receive resulting explanation string from the AI service.
- * 4. Populate explanation content into the DOM output card.
- */
-function handleExplainDoubt(roomId, questionText) {
-  // TODO: fetch POST /api/ai/explain, extract text, update DOM
-}
+  try {
+    const token = localStorage.getItem("token");
 
-// Bind DOM event listeners on load
-document.addEventListener('DOMContentLoaded', () => {
-  const workspace = document.querySelector('.room-workspace');
-  if (workspace) {
-    const roomId = workspace.getAttribute('data-room-id');
+    const response = await fetch("/api/ai/summarize", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ roomId }),
+    });
 
-    // Summarize button hook
-    const summarizeBtn = document.getElementById('ai-summarize-btn');
-    if (summarizeBtn) {
-      summarizeBtn.addEventListener('click', () => handleSummarize(roomId));
+    if (!response.ok) {
+      throw new Error("Failed to generate summary.");
     }
 
-    // MCQ quiz button hook
-    const quizBtn = document.getElementById('ai-quiz-btn');
-    if (quizBtn) {
-      quizBtn.addEventListener('click', () => handleGenerateQuestions(roomId));
-    }
+    const data = await response.json();
 
-    // Doubt form submission hook
-    const doubtForm = document.getElementById('ai-doubt-form');
-    if (doubtForm) {
-      doubtForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const doubtInput = document.getElementById('ai-doubt-input');
-        if (doubtInput) {
-          handleExplainDoubt(roomId, doubtInput.value);
-        }
-      });
-    }
+    output.innerText = data.summary || "No summary available.";
+  } catch (error) {
+    console.error(error);
+    output.innerText = "Unable to generate summary. Please try again.";
   }
-});
+}
+
+/**
+ * Generates AI practice MCQs and renders them.
+ */
+async function handleGenerateQuestions(roomId) {
+  const output = document.getElementById("ai-quiz-output");
+  if (!output) return;
+
+  output.innerHTML = "<p>Generating quiz...</p>";
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch("/api/ai/questions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ roomId }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to generate quiz.");
+    }
+
+    const data = await response.json();
+
+    const questions = data.questions || [];
+
+    if (!questions.length) {
+      output.innerHTML = "<p>No questions generated.</p>";
+      return;
+    }
+
+    output.innerHTML = "";
+
+    questions.forEach((question, index) => {
+      const card = document.createElement("div");
+      card.className = "quiz-question";
+
+      const title = document.createElement("h4");
+      title.textContent = `${index + 1}. ${question.question}`;
+
+      const optionList = document.createElement("ul");
+
+      question.options.forEach((option) => {
+        const li = document.createElement("li");
+        li.textContent = option;
+        optionList.appendChild(li);
+      });
+
+      const revealBtn = document.createElement("button");
+      revealBtn.textContent = "Show Answer";
+
+      const answer = document.createElement("p");
+      answer.style.display = "none";
+      answer.innerHTML = `<strong>Answer:</strong> ${question.answer}`;
+
+      revealBtn.addEventListener("click", () => {
+        answer.style.display =
+          answer.style.display === "none" ? "block" : "none";
+      });
+
+      card.appendChild(title);
+      card.appendChild(optionList);
+      card.appendChild(revealBtn);
+      card.appendChild(answer);
+
+      output.appendChild(card);
+    });
+  } catch (error) {
+    console.error(error);
+    output.innerHTML = "<p>Unable to generate quiz.</p>";
+  }
+}
+
+/**
+ * Sends a doubt to the AI tutor.
+ */
+async function handleExplainDoubt(roomId, questionText) {
+  const output = document.getElementById("ai-doubt-output");
+  if (!output) return;
+
+  if (!questionText.trim()) {
+    output.innerText = "Please enter a question.";
+    return;
+  }
+
+  output.innerText = "Thinking...";
+
+  try {
+    const token = localStorage.getItem("token");
+
+    const response = await fetch("/api/ai/explain", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        roomId,
+        question: questionText,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to retrieve explanation.");
+    }
+
+    const data = await response.json();
+
+    output.innerText =
+      data.explanation || "No explanation was returned.";
+  } catch (error) {
+    console.error(error);
+    output.innerText =
+      "Unable to retrieve explanation. Please try again.";
+  }
+}

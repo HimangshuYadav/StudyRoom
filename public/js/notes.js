@@ -1,29 +1,103 @@
 /**
- * Sets up synchronization for the collaborative room text document using polling or debounced save actions.
- *
- * @function initNotesSync
- * @param {string} roomId - The database reference ID of the collaborative room.
- * @returns {void}
- *
- * Implementation Steps:
- * 1. Locate the '#shared-notes-editor' textarea.
- * 2. Dispatch a GET request to '/api/notes/<roomId>' with token auth to retrieve current notes state.
- * 3. Populates the textarea field with retrieved content.
- * 4. Add an input event listener on the textarea.
- * 5. Set up a debounce function that delays action by 1500 milliseconds (1.5s).
- * 6. When the debounce timer triggers, submit a PUT request containing new text content to '/api/notes/<roomId>'.
- * 7. Update status badges to reflect saving vs. saved states.
+ * Sets up synchronization for the collaborative room notes.
  */
 function initNotesSync(roomId) {
-  // TODO: fetch current note content from GET /api/notes/:roomId and set to textarea
-  // TODO: listen to input event on textarea, debounce 1.5s, PUT /api/notes/:roomId with current content
+  const textarea = document.getElementById("shared-notes-editor");
+  const statusBadge = document.getElementById("notes-save-status");
+
+  if (!textarea) return;
+
+  const token = localStorage.getItem("token");
+
+  let debounceTimer;
+
+  /**
+   * Updates the save status badge.
+   */
+  function setStatus(status) {
+    if (!statusBadge) return;
+    statusBadge.textContent = status;
+  }
+
+  /**
+   * Loads existing notes.
+   */
+  async function loadNotes() {
+    setStatus("Loading...");
+
+    try {
+      const response = await fetch(`/api/notes/${roomId}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to load notes.");
+      }
+
+      const data = await response.json();
+
+      textarea.value = data.content || "";
+
+      setStatus("Saved");
+    } catch (error) {
+      console.error(error);
+      setStatus("Load Failed");
+    }
+  }
+
+  /**
+   * Saves notes to the server.
+   */
+  async function saveNotes() {
+    setStatus("Saving...");
+
+    try {
+      const response = await fetch(`/api/notes/${roomId}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          content: textarea.value,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to save notes.");
+      }
+
+      setStatus("Saved");
+    } catch (error) {
+      console.error(error);
+      setStatus("Save Failed");
+    }
+  }
+
+  // Load notes initially
+  loadNotes();
+
+  // Auto-save with 1.5-second debounce
+  textarea.addEventListener("input", () => {
+    setStatus("Saving...");
+
+    clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(() => {
+      saveNotes();
+    }, 1500);
+  });
 }
 
 // Auto-run if workspace metadata is active in page structure
-document.addEventListener('DOMContentLoaded', () => {
-  const workspace = document.querySelector('.room-workspace');
+document.addEventListener("DOMContentLoaded", () => {
+  const workspace = document.querySelector(".room-workspace");
+
   if (workspace) {
-    const roomId = workspace.getAttribute('data-room-id');
+    const roomId = workspace.getAttribute("data-room-id");
     initNotesSync(roomId);
   }
 });
