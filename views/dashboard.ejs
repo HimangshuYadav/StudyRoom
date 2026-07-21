@@ -31,9 +31,23 @@
         <h3>Join via Code</h3>
         <form id="join-room-form">
           <div class="form-group">
-            <label for="join-code">6-Character Code</label>
-            <input type="text" id="join-code" required maxlength="6" placeholder="ABC123">
-          </div>
+
+    <div class="join-label-row">
+        <label for="join-code">6-Character Code</label>
+
+        <span id="code-counter">
+            0/6
+        </span>
+    </div>
+
+    <input
+        type="text"
+        id="join-code"
+        required
+        maxlength="6"
+        placeholder="ABC123">
+
+</div>
           <button type="submit" class="btn-sidebar secondary">Join Room</button>
         </form>
       </div>
@@ -41,11 +55,24 @@
 
     <!-- Main area showing list of active public rooms -->
     <section class="rooms-section">
-      <h2>Active Public Rooms</h2>
-      <div id="rooms-list" class="rooms-grid-container">
+
+    <div class="rooms-header-row">
+        <h2>Active Public Rooms</h2>
+
+        <input
+            type="text"
+            id="room-search"
+            placeholder="🔍 Search rooms..."
+        >
+    </div>
+
+    <div id="rooms-list" class="rooms-grid-container">
         <!-- Rendered dynamically by public/js/dashboard.js -->
         <p class="placeholder-text">Loading active rooms...</p>
-      </div>
+    </div>
+    <p id="no-results-message" class="no-results">
+    🔍 No study rooms found.
+    </p>
     </section>
   </div>
 </main>
