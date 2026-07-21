@@ -31,7 +31,7 @@ async function summarizeRoom(req, res) {
     const messageText = messages
       .slice()
       .reverse()
-      .map((m) => `${m.sender ? m.sender + ': ' : ''}${m.content}`)
+      .map((m) => `${m.senderName ? m.senderName + ': ' : ''}${m.text}`)
       .join('\n');
 
     const noteText = note?.content || '';

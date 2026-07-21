@@ -110,4 +110,6 @@ function registerChatHandlers(io) {
   });
 }
 
-module.exports = registerChatHandlers;
+module.exports = {
+  registerChatHandlers
+};

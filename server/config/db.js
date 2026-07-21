@@ -6,17 +6,23 @@ const mongoose = require('mongoose');
  *
  * @function connectDB
  * @async
- * @param {void} - No parameters.
- * @returns {Promise<void>} - Resolves when the connection is established, or terminates process on failure.
- *
- * Implementation Steps:
- * 1. Retrieve the MongoDB URI from the process.env.MONGO_URI environment variable.
- * 2. Call mongoose.connect(mongoUri) to initiate connection.
- * 3. Listen for connection success, logging a confirmation message to console.
- * 4. Catch database connection failure, log the error, and terminate the server process using process.exit(1).
+ * @returns {Promise<void>}
  */
 async function connectDB() {
-  // TODO: implement database connection with mongoose.connect(process.env.MONGO_URI)
+  try {
+    const mongoUri = process.env.MONGO_URI;
+
+    if (!mongoUri) {
+      throw new Error('MONGO_URI environment variable is not defined.');
+    }
+
+    const conn = await mongoose.connect(mongoUri);
+
+    console.log(`MongoDB Connected: ${conn.connection.host}`);
+  } catch (error) {
+    console.error('MongoDB Connection Error:', error.message);
+    process.exit(1);
+  }
 }
 
 module.exports = connectDB;
