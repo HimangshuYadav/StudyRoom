@@ -60,6 +60,54 @@
   --font-mono:  'DM Mono', 'Courier New', monospace;
 
   --transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Page background image texture */
+  --bg-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+}
+
+/* ── Dark Theme Overrides ─────────────────── */
+[data-theme="dark"] {
+  /* Warm charcoal & deep espresso backgrounds */
+  --bg-page:      #120e0c;
+  --bg-surface:   #1b1512;
+  --bg-card:      #211a16;
+  --bg-input:     #161210;
+  --bg-inset:     #0c0a09;
+
+  /* Cream text colors for comfort and premium readability */
+  --ink-900:    #f6f0ea;
+  --ink-700:    #e2d6ca;
+  --ink-500:    #a59280;
+  --ink-300:    #6f5d4e;
+  --ink-100:    #2d231b;
+
+  /* Accent — clay/terracotta */
+  --clay-dark:  #eb7b42;
+  --clay:       #c47447;
+  --clay-light: #f09a62;
+  --clay-pale:  #472415;
+
+  /* Accent 2 — sage green */
+  --sage-dark:  #749c83;
+  --sage:       #5a7a67;
+  --sage-light: #89b89c;
+  --sage-pale:  #203327;
+
+  /* Accent 3 — dusty blue/slate */
+  --slate-dark: #738ca2;
+  --slate:      #5c7080;
+  --slate-pale: #202c38;
+
+  /* UI chrome */
+  --border:         #42352a;
+  --border-strong:  #63503f;
+  --shadow-ink:     3px 3px 0px #0c0907;
+  --shadow-ink-sm:  2px 2px 0px #0c0907;
+  --shadow-soft:    0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-card:    0 2px 8px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255,255,255,0.02);
+
+  /* Dark mode specific background noise overlay - optimized opacity for dark bg */
+  --bg-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
 }
 
 /* ── Reset ───────────────────────────────── */
@@ -68,9 +116,7 @@ html { scroll-behavior: smooth; }
 
 body {
   background-color: var(--bg-page);
-  /* Subtle paper texture via noise-like repeating gradient */
-  background-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='400'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='400' height='400' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  background-image: var(--bg-image);
   color: var(--ink-700);
   font-family: var(--font-sans);
   min-height: 100vh;
@@ -168,6 +214,44 @@ body {
 .nav-item:hover {
   color: var(--ink-900);
   background: var(--bg-surface);
+}
+
+.btn-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  border-radius: var(--r-sm);
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--ink-500);
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.btn-theme-toggle:hover {
+  color: var(--ink-900);
+  background: var(--bg-surface);
+  border-color: var(--ink-900);
+}
+
+/* Theme Icon Visibility Rules */
+.theme-icon-sun {
+  display: none;
+}
+.theme-icon-moon {
+  display: inline-block;
+}
+
+[data-theme="dark"] .theme-icon-sun {
+  display: inline-block;
+}
+[data-theme="dark"] .theme-icon-moon {
+  display: none;
+}
+
+[data-theme="dark"] .btn-create-topic {
+  color: var(--bg-page);
 }
 
 .nav-user-badge {
