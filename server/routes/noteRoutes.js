@@ -3,12 +3,25 @@ const router = express.Router();
 const noteController = require('../controllers/noteController');
 const { verifyToken } = require('../middleware/authMiddleware');
 
-// Route mapping for Retrieving Study Notes
-// GET /api/notes/:roomId -> Retrieves notes matching the room ID
-router.get('/:roomId', verifyToken, noteController.getNotes);
+// List notes for room (public + user's private notes)
+router.get('/:roomId', verifyToken, noteController.listNotes);
 
-// Route mapping for Updating/Saving Study Notes
-// PUT /api/notes/:roomId -> Upserts notes context with current editor ID
-router.put('/:roomId', verifyToken, noteController.saveNotes);
+// Create new note topic
+router.post('/:roomId', verifyToken, noteController.createNote);
+
+// Get single note detail
+router.get('/detail/:noteId', verifyToken, noteController.getNoteById);
+
+// Update note detail (title, content, isPublic)
+router.put('/detail/:noteId', verifyToken, noteController.updateNote);
+
+// Delete note topic
+router.delete('/detail/:noteId', verifyToken, noteController.deleteNote);
+
+// Upload file attachment
+router.post('/detail/:noteId/upload', verifyToken, noteController.uploadAttachment);
+
+// Delete file attachment
+router.delete('/detail/:noteId/attachment/:attachmentId', verifyToken, noteController.deleteAttachment);
 
 module.exports = router;

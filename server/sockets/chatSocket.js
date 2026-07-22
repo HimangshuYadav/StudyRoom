@@ -72,31 +72,43 @@ function registerChatHandlers(io) {
       socket.to(roomId).emit('userTyping', { userName, isTyping });
     });
 
-    // 4. Real-time Notes sync
-    socket.on('updateNotes', async ({ roomId, content, userId }) => {
-      // Broadcast live to all other clients in the room
-      socket.to(roomId).emit('notesUpdated', {
-        content: content || '',
-        updatedBy: socket.data.userName || 'Someone',
-      });
+    // 4. Real-time Multi-Note sync
+    socket.on('updateNotes', async ({ roomId, noteId, title, content, isPublic, userId }) => {
+      // If public note, broadcast live to all other clients in the room
+      if (isPublic !== false) {
+        socket.to(roomId).emit('notesUpdated', {
+          noteId,
+          title,
+          content: content || '',
+          updatedBy: socket.data.userName || 'Someone',
+        });
+      }
 
       // Persist to DB
       try {
-        await Note.findOneAndUpdate(
-          { roomId },
-          {
-            content: content || '',
-            lastEditedBy: userId || socket.data.userId,
-            updatedAt: Date.now(),
-          },
-          { upsert: true, setDefaultsOnInsert: true }
-        );
+        if (noteId) {
+          await Note.findByIdAndUpdate(
+            noteId,
+            {
+              ...(title ? { title } : {}),
+              content: content || '',
+              ...(typeof isPublic === 'boolean' ? { isPublic } : {}),
+              lastEditedBy: userId || socket.data.userId,
+              updatedAt: Date.now(),
+            }
+          );
+        }
       } catch (err) {
-        console.error('Error saving notes via socket:', err);
+        console.error('Error saving note via socket:', err);
       }
     });
 
-    // 5. Disconnect — clean up online list
+    // 5. Note Topic Created / Deleted Notification
+    socket.on('noteListChanged', ({ roomId }) => {
+      socket.to(roomId).emit('refreshNoteList');
+    });
+
+    // 6. Disconnect — clean up online list
     socket.on('disconnect', () => {
       const { roomId, userName } = socket.data;
 

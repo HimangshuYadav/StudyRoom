@@ -74,20 +74,91 @@
         </button>
       </div>
 
-      <!-- Notes -->
+      <!-- ── Multi-Topic Notes Panel ── -->
       <div class="tab-panel notes-panel active" id="panel-notes">
-        <div class="notes-header">
-          <span>Shared notes</span>
+        
+        <!-- Filter Tabs: All, Public, Private -->
+        <div class="notes-filter-bar">
+          <div class="filter-pills">
+            <button class="filter-pill active" data-filter="all">All</button>
+            <button class="filter-pill" data-filter="public">
+              <svg class="icon icon-sm"><use href="#icon-eye"/></svg> Public
+            </button>
+            <button class="filter-pill" data-filter="private">
+              <svg class="icon icon-sm"><use href="#icon-lock"/></svg> Private
+            </button>
+          </div>
+          <button class="btn-new-topic" id="btn-new-topic" title="Create new note topic">
+            <svg class="icon icon-sm"><use href="#icon-plus"/></svg> New Topic
+          </button>
+        </div>
+
+        <!-- Inline New Topic Form (hidden by default) -->
+        <form class="new-topic-form hidden" id="new-topic-form">
+          <input
+            type="text"
+            id="new-topic-title"
+            class="topic-input"
+            placeholder="Topic title (e.g. Physics Formulas)"
+            maxlength="60"
+            required
+            autocomplete="off"
+          >
+          <div class="topic-form-footer">
+            <label class="visibility-toggle">
+              <input type="checkbox" id="new-topic-public" checked>
+              <span>Public (Room)</span>
+            </label>
+            <div class="topic-form-btns">
+              <button type="button" class="btn-cancel" id="btn-cancel-topic">Cancel</button>
+              <button type="submit" class="btn-create-topic">Create</button>
+            </div>
+          </div>
+        </form>
+
+        <!-- Topic Selector Dropdown -->
+        <div class="topic-selector-wrapper">
+          <select id="note-topic-select" class="topic-select">
+            <option value="">Loading notes…</option>
+          </select>
           <span id="notes-status" class="saved">Saved</span>
         </div>
+
+        <!-- Active Note Header Bar -->
+        <div class="active-note-header">
+          <div class="active-note-title-wrap">
+            <span class="vis-badge public" id="active-note-vis">
+              <svg class="icon icon-sm"><use href="#icon-eye"/></svg> Public Note
+            </span>
+          </div>
+          <button class="btn-icon danger" id="btn-delete-note" title="Delete this note topic">
+            <svg class="icon icon-sm"><use href="#icon-trash"/></svg>
+          </button>
+        </div>
+
+        <!-- Text Editor -->
         <textarea
           id="shared-notes-editor"
-          placeholder="Take shared notes here — everything is synced for the room…"
+          placeholder="Take notes here — updates live for everyone in public notes…"
         ></textarea>
-        <div class="notes-char-count"><span id="notes-char-count">0</span> characters</div>
+
+        <div class="notes-footer-row">
+          <label class="btn-attach" title="Attach file to this note">
+            <input type="file" id="note-file-input" class="hidden-file-input">
+            <svg class="icon icon-sm"><use href="#icon-paperclip"/></svg> Attach File
+          </label>
+          <div class="notes-char-count"><span id="notes-char-count">0</span> characters</div>
+        </div>
+
+        <!-- File Attachments List -->
+        <div class="attachments-section" id="attachments-section">
+          <div class="attachments-title">Files & Attachments (<span id="attachments-count">0</span>)</div>
+          <div class="attachments-list" id="attachments-list"></div>
+        </div>
+
       </div>
 
-      <!-- AI Tutor -->
+      <!-- ── AI Tutor Panel ── -->
       <div class="tab-panel ai-panel" id="panel-ai">
 
         <div class="ai-section">
