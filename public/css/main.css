@@ -419,6 +419,38 @@ body {
   box-shadow: 3px 3px 0 var(--clay-pale);
 }
 
+/* Password wrapper and visibility toggle */
+.password-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.password-wrapper input {
+  padding-right: 3rem !important; /* Prevent text overlap with toggle icon */
+}
+
+.btn-toggle-password {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0.65rem 0.85rem;
+  color: var(--ink-300);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color var(--transition);
+  border-radius: var(--r-sm);
+  z-index: 10;
+}
+
+.btn-toggle-password:hover {
+  color: var(--ink-700);
+}
+
 .btn-submit {
   width: 100%;
   padding: 0.85rem;
