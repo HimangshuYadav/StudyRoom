@@ -3,8 +3,7 @@ const Groq = require('groq-sdk');
 let groqClient = null;
 
 /**
- * Returns a singleton Groq client.
- *
+ * Returns a singleton Groq client instance.
  * @returns {Groq}
  */
 function getGroqClient() {
@@ -22,12 +21,14 @@ function getGroqClient() {
 }
 
 /**
- * Sends a prompt to a Groq-hosted AI model and returns the generated response.
+ * Sends a prompt to Groq AI and returns the completion string.
+ * Uses llama-3.3-70b-versatile by default with llama-3.1-8b-instant fallback.
  *
  * @param {string} prompt
  * @param {Object} [options={}]
+ * @param {string} [options.model='llama-3.3-70b-versatile']
  * @param {number} [options.temperature=0.7]
- * @param {number} [options.maxTokens=512]
+ * @param {number} [options.maxTokens=768]
  * @returns {Promise<string>}
  */
 async function getCompletion(prompt, options = {}) {
@@ -36,19 +37,21 @@ async function getCompletion(prompt, options = {}) {
   }
 
   const {
+    model = 'llama-3.3-70b-versatile',
     temperature = 0.7,
-    maxTokens = 512,
+    maxTokens = 768,
   } = options;
 
-  try {
-    const groq = getGroqClient();
+  const groq = getGroqClient();
 
+  // Try primary model (llama-3.3-70b-versatile)
+  try {
     const response = await groq.chat.completions.create({
-      model: 'llama3-8b-8192',
+      model,
       messages: [
         {
           role: 'user',
-          content: prompt,
+          content: prompt.trim(),
         },
       ],
       temperature,
@@ -56,18 +59,33 @@ async function getCompletion(prompt, options = {}) {
     });
 
     const content = response.choices?.[0]?.message?.content?.trim();
+    if (content) return content;
+  } catch (err) {
+    console.warn(`Primary model (${model}) failed, trying fallback model (llama-3.1-8b-instant)...`, err.message);
+  }
 
-    if (!content) {
-      throw new Error('No completion was returned by the Groq API.');
+  // Fallback model (llama-3.1-8b-instant)
+  try {
+    const fallbackResponse = await groq.chat.completions.create({
+      model: 'llama-3.1-8b-instant',
+      messages: [
+        {
+          role: 'user',
+          content: prompt.trim(),
+        },
+      ],
+      temperature,
+      max_tokens: maxTokens,
+    });
+
+    const fallbackContent = fallbackResponse.choices?.[0]?.message?.content?.trim();
+    if (!fallbackContent) {
+      throw new Error('No completion returned by AI model.');
     }
-
-    return content;
-  } catch (error) {
-    console.error('Groq API Error:', error);
-
-    throw new Error(
-      error.message || 'Failed to generate AI completion.'
-    );
+    return fallbackContent;
+  } catch (fallbackErr) {
+    console.error('Groq AI Error:', fallbackErr);
+    throw new Error(fallbackErr.message || 'Failed to generate AI completion.');
   }
 }
 

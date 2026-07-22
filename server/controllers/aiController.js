@@ -10,14 +10,24 @@ function stripCodeFences(text) {
     .trim();
 }
 
+async function getRoomPublicNotesText(roomId) {
+  if (!roomId) return '';
+  try {
+    const notes = await Note.find({ roomId, isPublic: true }).limit(5);
+    return notes.map(n => `--- Note: ${n.title} ---\n${n.content}`).join('\n\n');
+  } catch {
+    return '';
+  }
+}
+
 async function summarizeRoom(req, res) {
   try {
     const { roomId } = req.body;
     if (!roomId) return res.status(400).json({ error: 'roomId is required.' });
 
-    const [messages, note] = await Promise.all([
+    const [messages, noteText] = await Promise.all([
       Message.find({ roomId }).sort({ createdAt: -1 }).limit(50),
-      Note.findOne({ roomId }),
+      getRoomPublicNotesText(roomId),
     ]);
 
     const messageText = messages
@@ -25,8 +35,6 @@ async function summarizeRoom(req, res) {
       .reverse()
       .map((m) => `${m.senderName ? m.senderName + ': ' : ''}${m.text}`)
       .join('\n');
-
-    const noteText = note?.content || '';
 
     const prompt = `You are an assistant summarizing a study group's activity.
 
@@ -52,8 +60,7 @@ async function generateQuestions(req, res) {
 
     let noteText = '';
     if (roomId) {
-      const note = await Note.findOne({ roomId });
-      noteText = note?.content || '';
+      noteText = await getRoomPublicNotesText(roomId);
     }
 
     // Derive topic from notes if not explicitly provided
@@ -93,8 +100,7 @@ async function explainDoubt(req, res) {
 
     let noteText = '';
     if (roomId) {
-      const note = await Note.findOne({ roomId });
-      noteText = note?.content || '';
+      noteText = await getRoomPublicNotesText(roomId);
     }
 
     const prompt = `You are a friendly, patient tutor helping a student with a doubt.
