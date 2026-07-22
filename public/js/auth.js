@@ -75,6 +75,47 @@ function setLoading(btn, loading) {
 function initAuth() {
   syncNavbar();
 
+  // Password visibility toggler
+  document.querySelectorAll('.btn-toggle-password').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const wrapper = btn.closest('.password-wrapper');
+      if (!wrapper) return;
+      const input = wrapper.querySelector('input');
+      if (!input) return;
+
+      const isPassword = input.type === 'password';
+
+      // Store cursor position and focus state
+      let selectionStart = null;
+      let selectionEnd = null;
+      try {
+        selectionStart = input.selectionStart;
+        selectionEnd = input.selectionEnd;
+      } catch (e) {
+        // Fallback
+      }
+
+      input.type = isPassword ? 'text' : 'password';
+
+      // Restore cursor position
+      try {
+        if (selectionStart !== null && selectionEnd !== null) {
+          input.setSelectionRange(selectionStart, selectionEnd);
+        }
+      } catch (e) {
+        // Fallback
+      }
+
+      // Maintain focus on input
+      input.focus();
+
+      const svgUse = btn.querySelector('use');
+      if (svgUse) {
+        svgUse.setAttribute('href', isPassword ? '#icon-eye-off' : '#icon-eye');
+      }
+    });
+  });
+
   // Sign Up Form Handler
   const signupForm = document.getElementById('signup-form');
   if (signupForm) {
