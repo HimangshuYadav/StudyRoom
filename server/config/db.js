@@ -1,8 +1,8 @@
 const mongoose = require('mongoose');
 
 /**
- * Connects to the MongoDB database using the URI specified in environment variables.
- * Logs success or failure message and exits the process on failure.
+ * Connects to the MongoDB database.
+ * Uses process.env.MONGO_URI or defaults to local MongoDB instance.
  *
  * @function connectDB
  * @async
@@ -10,17 +10,17 @@ const mongoose = require('mongoose');
  */
 async function connectDB() {
   try {
-    const mongoUri = process.env.MONGO_URI;
+    const mongoUri = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/studyroom';
 
-    if (!mongoUri) {
-      throw new Error('MONGO_URI environment variable is not defined.');
+    if (!process.env.MONGO_URI) {
+      console.warn('⚠️ MONGO_URI environment variable is not defined. Defaulting to local: mongodb://127.0.0.1:27017/studyroom');
     }
 
     const conn = await mongoose.connect(mongoUri);
 
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error('MongoDB Connection Error:', error.message);
+    console.error('❌ MongoDB Connection Error:', error.message);
     process.exit(1);
   }
 }
