@@ -1,87 +1,132 @@
-<%- include('partials/head') %>
-<!-- Custom styling for the collaborative study workspace -->
-<link rel="stylesheet" href="/css/room.css">
+<%- include('partials/head', { title: (room ? room.name : 'Room') + ' — StudyRoom' }) %>
 <%- include('partials/navbar') %>
+<link rel="stylesheet" href="/css/room.css">
 
-<main class="room-workspace" data-room-id="<%= roomId %>">
-  <!-- Room information header -->
-  <header class="room-banner">
-    <div class="room-info">
-      <h1 id="workspace-title">Study Room</h1>
-      <span class="room-badge" id="workspace-topic">Topic: Loading...</span>
-      <span class="code-badge">Join Code: <strong id="workspace-code">...</strong></span>
+<div id="toast-container"></div>
+
+<div class="room-workspace" data-room-id="<%= room._id %>">
+
+  <!-- ── Room Header ── -->
+  <header class="room-header">
+    <div class="room-header-info">
+      <div class="room-header-title" id="workspace-title"><%= room.name %></div>
+      <div class="room-header-meta">
+        <span class="room-topic-tag">
+          <svg class="icon icon-sm"><use href="#icon-book-open"/></svg> <%= room.topic %>
+        </span>
+        <span class="code-pill" id="workspace-code" title="Click to copy">
+          <svg class="icon icon-sm"><use href="#icon-hash"/></svg> <span id="code-value"><%= room.joinCode %></span>
+        </span>
+        <span class="members-pill">
+          <svg class="icon icon-sm"><use href="#icon-users"/></svg> <span id="members-count">0</span> online
+        </span>
+      </div>
     </div>
-    <div class="user-info">
-      <span>Active Members: <span id="members-count">0</span></span>
-    </div>
+    <a href="/dashboard" class="nav-item back-link">
+      <svg class="icon icon-sm"><use href="#icon-arrow-left"/></svg> Back
+    </a>
   </header>
 
-  <div class="workspace-grid">
-    <!-- Chat component -->
-    <section class="panel chat-panel">
-      <div class="panel-header">
-        <h3>💬 Room Chat</h3>
-      </div>
-      <div class="panel-body messages-display" id="chat-messages">
-        <!-- Messages append here dynamically -->
-      </div>
-      <div id="typing-indicator" class="typing-indicator-bar"></div>
-      <form id="chat-input-form" class="panel-footer-form">
-        <input type="text" id="chat-message-input" required placeholder="Type a message...">
-        <button type="submit">Send</button>
+  <!-- ── Chat ── -->
+  <section class="chat-panel">
+    <div class="chat-messages" id="chat-messages"></div>
+
+    <div class="typing-indicator hidden" id="typing-indicator">
+      <span id="typing-text"></span>
+    </div>
+
+    <div class="chat-input-area">
+      <form class="chat-input-form" id="chat-input-form">
+        <input
+          type="text"
+          id="chat-message-input"
+          placeholder="Write something thoughtful…"
+          autocomplete="off"
+          maxlength="1000"
+        >
+        <button type="submit" class="btn-send" aria-label="Send">
+          <svg class="icon icon-sm"><use href="#icon-send"/></svg>
+        </button>
       </form>
-    </section>
+    </div>
+  </section>
 
-    <!-- Shared Notes component -->
-    <section class="panel notes-panel">
-      <div class="panel-header">
-        <h3>📝 Shared Study Notes</h3>
-        <span class="status-note" id="notes-status">Saved</span>
-      </div>
-      <div class="panel-body text-editor-area">
-        <textarea id="shared-notes-editor" placeholder="Start typing shared notes here. Content is synced automatically..."></textarea>
-      </div>
-      <div class="panel-footer notes-editor-info">
-        <span id="notes-last-edited">Last edited by: --</span>
-      </div>
-    </section>
+  <!-- ── Sidebar ── -->
+  <aside class="room-sidebar">
 
-    <!-- AI Helper panel -->
-    <section class="panel ai-panel">
-      <div class="panel-header">
-        <h3>🤖 AI Study Assistant</h3>
+    <!-- Online Members -->
+    <div class="online-panel">
+      <div class="panel-title">
+        <span class="live-dot"></span>
+        In this room
       </div>
-      <div class="panel-body ai-interactions">
-        <!-- Room Summarizer -->
-        <div class="ai-feature-block">
-          <h4>Room Summary</h4>
-          <button id="ai-summarize-btn" class="btn-ai">Summarize Discussion</button>
-          <div id="ai-summary-output" class="ai-output-box">Summary outputs will appear here...</div>
+      <div class="online-list" id="online-list"></div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="sidebar-tabs">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="notes">
+          <svg class="icon icon-sm"><use href="#icon-pencil"/></svg> Notes
+        </button>
+        <button class="tab-btn" data-tab="ai">
+          <svg class="icon icon-sm"><use href="#icon-cpu"/></svg> AI Tutor
+        </button>
+      </div>
+
+      <!-- Notes -->
+      <div class="tab-panel notes-panel active" id="panel-notes">
+        <div class="notes-header">
+          <span>Shared notes</span>
+          <span id="notes-status" class="saved">Saved</span>
+        </div>
+        <textarea
+          id="shared-notes-editor"
+          placeholder="Take shared notes here — everything is synced for the room…"
+        ></textarea>
+        <div class="notes-char-count"><span id="notes-char-count">0</span> characters</div>
+      </div>
+
+      <!-- AI Tutor -->
+      <div class="tab-panel ai-panel" id="panel-ai">
+
+        <div class="ai-section">
+          <div class="ai-section-title">
+            <svg class="icon icon-sm"><use href="#icon-list"/></svg> Session Summary
+          </div>
+          <button class="btn-ai summarize" id="ai-summarize-btn">Summarise Room</button>
+          <div class="ai-output" id="ai-summary-output"></div>
         </div>
 
-        <!-- MCQs Generator -->
-        <div class="ai-feature-block">
-          <h4>Concept Practice Quiz</h4>
-          <button id="ai-quiz-btn" class="btn-ai">Generate 5 MCQs</button>
-          <div id="ai-quiz-output" class="ai-output-box">Generate practice questions from your notes.</div>
+        <div class="ai-divider"></div>
+
+        <div class="ai-section">
+          <div class="ai-section-title">
+            <svg class="icon icon-sm"><use href="#icon-lightbulb"/></svg> Ask the Tutor
+          </div>
+          <input type="text" class="ai-input" id="ai-doubt-input" placeholder="What don't you understand?">
+          <button class="btn-ai explain" id="ai-explain-btn">Get Explanation</button>
+          <div class="ai-output" id="ai-doubt-output"></div>
         </div>
 
-        <!-- Doubt Resolver -->
-        <div class="ai-feature-block">
-          <h4>Ask a Tutor</h4>
-          <form id="ai-doubt-form">
-            <input type="text" id="ai-doubt-input" required placeholder="Ask about a concept...">
-            <button type="submit" class="btn-ai">Explain</button>
-          </form>
-          <div id="ai-doubt-output" class="ai-output-box">Answers will appear here...</div>
+        <div class="ai-divider"></div>
+
+        <div class="ai-section">
+          <div class="ai-section-title">
+            <svg class="icon icon-sm"><use href="#icon-target"/></svg> Practice Quiz
+          </div>
+          <input type="text" class="ai-input" id="ai-quiz-topic-input" placeholder="Topic (optional — uses notes if blank)">
+          <button class="btn-ai quiz" id="ai-quiz-btn">Generate Quiz</button>
+          <div id="ai-quiz-output"></div>
         </div>
+
       </div>
-    </section>
-  </div>
-</main>
+    </div>
+  </aside>
 
-<!-- Load room-specific scripts -->
+</div>
+
+<%- include('partials/footer') %>
 <script src="/js/chat.js"></script>
 <script src="/js/notes.js"></script>
 <script src="/js/ai.js"></script>
-<%- include('partials/footer') %>

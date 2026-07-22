@@ -1,115 +1,95 @@
 const Message = require('../models/Message');
 
-/**
- * Attaches real-time Socket.io event listeners for collaborative classroom chat interactions.
- * Sets up listeners for joining rooms, sending messages, tracking typing, and disconnect states.
- *
- * @function registerChatHandlers
- * @param {Object} io - The Socket.io server instance attached to the server port.
- * @returns {void}
- *
- * Implementation Steps:
- * 1. Listen for new connection events via io.on('connection', socket => { ... }).
- * 2. On 'joinRoom' event (input: { roomId, userName }):
- *    - Call socket.join(roomId) to attach the socket to the room channel.
- *    - Broadcast 'userJoined' payload to all other sockets in roomId.
- * 3. On 'sendMessage' event (input: { roomId, senderId, senderName, text }):
- *    - Create and save a new Message document in MongoDB.
- *    - Emit 'newMessage' event containing the saved message to all clients in the roomId.
- * 4. On 'typing' event (input: { roomId, userName }):
- *    - Broadcast 'userTyping' payload containing userName to all other client sockets in the room.
- * 5. On 'disconnect' event:
- *    - Broadcast 'userLeft' message containing relevant identifiers to active room members if trackable.
- */
+// Track online users per room: Map<roomId, Map<socketId, {userId, userName}>>
+const roomOnlineUsers = new Map();
+
+function getRoomUserList(roomId) {
+  const room = roomOnlineUsers.get(roomId);
+  if (!room) return [];
+  return Array.from(room.values());
+}
+
 function registerChatHandlers(io) {
   io.on('connection', (socket) => {
-    // Track which room + user this socket belongs to, so we can
-    // announce departure on disconnect (socket.io doesn't give you
-    // this info automatically once the socket has left).
     socket.data.roomId = null;
     socket.data.userName = null;
+    socket.data.userId = null;
 
-    // 1. Join room event listener
-    socket.on('joinRoom', ({ roomId, userName }) => {
+    // 1. Join room — send history + online list
+    socket.on('joinRoom', async ({ roomId, userName, userId }) => {
       socket.join(roomId);
-
-      // Remember for later (typing/disconnect cleanup)
       socket.data.roomId = roomId;
       socket.data.userName = userName;
+      socket.data.userId = userId;
 
-      // Notify everyone else already in the room
-      socket.to(roomId).emit('userJoined', {
-        userName,
-        socketId: socket.id,
-        roomId,
-      });
+      // Track online presence
+      if (!roomOnlineUsers.has(roomId)) {
+        roomOnlineUsers.set(roomId, new Map());
+      }
+      roomOnlineUsers.get(roomId).set(socket.id, { userId, userName });
+
+      // Send last 30 messages to the joining user
+      try {
+        const history = await Message.find({ roomId })
+          .sort({ createdAt: -1 })
+          .limit(30)
+          .lean();
+        socket.emit('messageHistory', history.reverse());
+      } catch (err) {
+        console.error('Error loading message history:', err);
+      }
+
+      // Broadcast updated online list to everyone in room
+      const onlineList = getRoomUserList(roomId);
+      io.to(roomId).emit('onlineUsers', onlineList);
+
+      // Notify others someone joined
+      socket.to(roomId).emit('userJoined', { userName, socketId: socket.id });
     });
 
-
-
-
-
-
-
-
-    // 2. Send message event listener
-    socket.on('sendMessage', async ({ roomId, senderId, senderName, text }) => {
+    // 2. Send message
+    socket.on('sendMessage', async ({ roomId, userId, userName, text }) => {
       try {
-        if (!text || !text.trim()) return; // ignore empty messages
+        if (!text || !text.trim()) return;
 
         const message = await Message.create({
           roomId,
-          senderId,
-          senderName,
-          text,
+          senderId: userId,
+          senderName: userName,
+          text: text.trim(),
           createdAt: new Date(),
         });
 
-        // Broadcast to everyone in the room, including the sender,
-        // so the sender's own UI updates from the same source of truth.
         io.to(roomId).emit('newMessage', message);
       } catch (err) {
-        // Let the sending client know something went wrong instead
-        // of failing silently.
-        socket.emit('messageError', {
-          error: 'Failed to send message.',
-          details: err.message,
-        });
+        socket.emit('messageError', { error: 'Failed to send message.' });
       }
     });
 
-
-
-
-
-
-
-    // 3. User typing event listener
-    socket.on('typing', ({ roomId, userName }) => {
-      // socket.to() excludes the sender — no one needs to see their own typing indicator
-      socket.to(roomId).emit('userTyping', { userName });
+    // 3. Typing indicator
+    socket.on('typing', ({ roomId, userName, isTyping }) => {
+      socket.to(roomId).emit('userTyping', { userName, isTyping });
     });
 
-
-
-
-
-
-    // 4. Disconnect event listener
+    // 4. Disconnect — clean up online list
     socket.on('disconnect', () => {
       const { roomId, userName } = socket.data;
 
       if (roomId) {
-        socket.to(roomId).emit('userLeft', {
-          userName,
-          socketId: socket.id,
-          roomId,
-        });
+        const room = roomOnlineUsers.get(roomId);
+        if (room) {
+          room.delete(socket.id);
+          if (room.size === 0) {
+            roomOnlineUsers.delete(roomId);
+          }
+        }
+
+        const onlineList = getRoomUserList(roomId);
+        io.to(roomId).emit('onlineUsers', onlineList);
+        socket.to(roomId).emit('userLeft', { userName, socketId: socket.id });
       }
     });
   });
 }
 
-module.exports = {
-  registerChatHandlers
-};
+module.exports = { registerChatHandlers };

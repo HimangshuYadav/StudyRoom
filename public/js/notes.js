@@ -1,103 +1,70 @@
 /**
- * Sets up synchronization for the collaborative room notes.
+ * StudyRoom — Shared Notes sync
+ * Auto-saves with debounce, shows status badge, character count.
  */
-function initNotesSync(roomId) {
-  const textarea = document.getElementById("shared-notes-editor");
-  const statusBadge = document.getElementById("notes-save-status");
+document.addEventListener('DOMContentLoaded', () => {
+  const workspace = document.querySelector('.room-workspace');
+  if (!workspace) return;
+
+  const roomId    = workspace.getAttribute('data-room-id');
+  const token     = localStorage.getItem('token');
+  const textarea  = document.getElementById('shared-notes-editor');
+  const statusEl  = document.getElementById('notes-status');
+  const charCount = document.getElementById('notes-char-count');
 
   if (!textarea) return;
 
-  const token = localStorage.getItem("token");
-
-  let debounceTimer;
-
-  /**
-   * Updates the save status badge.
-   */
-  function setStatus(status) {
-    if (!statusBadge) return;
-    statusBadge.textContent = status;
+  function setStatus(text, cls) {
+    if (!statusEl) return;
+    statusEl.textContent  = text;
+    statusEl.className    = cls;
   }
 
-  /**
-   * Loads existing notes.
-   */
+  function updateCharCount() {
+    if (charCount) charCount.textContent = textarea.value.length;
+  }
+
   async function loadNotes() {
-    setStatus("Loading...");
-
+    setStatus('Loading…', 'saving');
     try {
-      const response = await fetch(`/api/notes/${roomId}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await fetch(`/api/notes/${roomId}`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to load notes.");
-      }
-
-      const data = await response.json();
-
-      textarea.value = data.content || "";
-
-      setStatus("Saved");
-    } catch (error) {
-      console.error(error);
-      setStatus("Load Failed");
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      textarea.value = data.content || '';
+      updateCharCount();
+      setStatus('Saved', 'saved');
+    } catch {
+      setStatus('Load failed', 'error');
     }
   }
 
-  /**
-   * Saves notes to the server.
-   */
   async function saveNotes() {
-    setStatus("Saving...");
-
+    setStatus('Saving…', 'saving');
     try {
-      const response = await fetch(`/api/notes/${roomId}`, {
-        method: "PUT",
+      const res = await fetch(`/api/notes/${roomId}`, {
+        method: 'PUT',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          content: textarea.value,
-        }),
+        body: JSON.stringify({ content: textarea.value }),
       });
-
-      if (!response.ok) {
-        throw new Error("Failed to save notes.");
-      }
-
-      setStatus("Saved");
-    } catch (error) {
-      console.error(error);
-      setStatus("Save Failed");
+      if (!res.ok) throw new Error();
+      setStatus('Saved', 'saved');
+    } catch {
+      setStatus('Save failed', 'error');
     }
   }
 
-  // Load notes initially
   loadNotes();
 
-  // Auto-save with 1.5-second debounce
-  textarea.addEventListener("input", () => {
-    setStatus("Saving...");
-
-    clearTimeout(debounceTimer);
-
-    debounceTimer = setTimeout(() => {
-      saveNotes();
-    }, 1500);
+  let debounce;
+  textarea.addEventListener('input', () => {
+    updateCharCount();
+    setStatus('Unsaved', 'saving');
+    clearTimeout(debounce);
+    debounce = setTimeout(saveNotes, 1500);
   });
-}
-
-// Auto-run if workspace metadata is active in page structure
-document.addEventListener("DOMContentLoaded", () => {
-  const workspace = document.querySelector(".room-workspace");
-
-  if (workspace) {
-    const roomId = workspace.getAttribute("data-room-id");
-    initNotesSync(roomId);
-  }
 });

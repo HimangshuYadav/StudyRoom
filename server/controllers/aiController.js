@@ -2,10 +2,6 @@ const Message = require('../models/Message');
 const Note = require('../models/Note');
 const groqClient = require('../utils/groqClient');
 
-/**
- * Strips markdown code fences (```json ... ``` or ``` ... ```) that LLMs
- * sometimes wrap around JSON responses, so the remaining text can be parsed safely.
- */
 function stripCodeFences(text) {
   return text
     .trim()
@@ -17,17 +13,13 @@ function stripCodeFences(text) {
 async function summarizeRoom(req, res) {
   try {
     const { roomId } = req.body;
-
-    if (!roomId) {
-      return res.status(400).json({ error: 'roomId is required.' });
-    }
+    if (!roomId) return res.status(400).json({ error: 'roomId is required.' });
 
     const [messages, note] = await Promise.all([
       Message.find({ roomId }).sort({ createdAt: -1 }).limit(50),
-      Note.findOne({ roomId })
+      Note.findOne({ roomId }),
     ]);
 
-    // Messages were fetched newest-first for the limit; reverse to chronological order for the prompt
     const messageText = messages
       .slice()
       .reverse()
@@ -44,14 +36,13 @@ ${messageText || '(no messages yet)'}
 Shared room notes:
 ${noteText || '(no notes yet)'}
 
-Based on the above, write a concise bulleted summary of the active discussion topics and key points from the notes. Respond with bullet points only, no preamble.`;
+Write a concise bulleted summary of the active discussion topics and key points. Bullet points only, no preamble.`;
 
-    const summary = await groqClient.getCompletion(prompt);
-
+    const summary = await groqClient.getCompletion(prompt, { maxTokens: 600 });
     return res.json({ summary: summary.trim() });
   } catch (err) {
     console.error('summarizeRoom error:', err);
-    return res.status(500).json({ error: 'Failed to generate room summary.' });
+    return res.status(500).json({ error: 'Failed to generate summary.' });
   }
 }
 
@@ -59,37 +50,36 @@ async function generateQuestions(req, res) {
   try {
     const { topic, roomId } = req.body;
 
-    if (!topic) {
-      return res.status(400).json({ error: 'topic is required.' });
-    }
-
     let noteText = '';
     if (roomId) {
       const note = await Note.findOne({ roomId });
       noteText = note?.content || '';
     }
 
+    // Derive topic from notes if not explicitly provided
+    const effectiveTopic = topic?.trim() || noteText.split('\n')[0]?.slice(0, 80) || 'General Knowledge';
+
     const prompt = `You are a quiz generator for a study app.
 
-Topic: ${topic}
-${noteText ? `\nRelevant room notes for additional context:\n${noteText}\n` : ''}
-Write exactly 5 multiple choice questions on this topic. Each question must have exactly 4 options and one correct answer.
+Topic: ${effectiveTopic}
+${noteText ? `\nRelevant room notes:\n${noteText.slice(0, 600)}\n` : ''}
+Write exactly 5 multiple choice questions on this topic. Each question must have exactly 4 options (A, B, C, D format) and one correct answer.
 
-Respond with ONLY valid JSON in this exact format, with no markdown fences and no extra text:
-[{"question": string, "options": string[], "answer": string}]`;
+Respond with ONLY valid JSON, no markdown fences:
+[{"question": "string", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "answer": "A. ..."}]`;
 
-    const raw = await groqClient.getCompletion(prompt);
+    const raw = await groqClient.getCompletion(prompt, { maxTokens: 1200 });
     const cleaned = stripCodeFences(raw);
 
     let questions;
     try {
       questions = JSON.parse(cleaned);
     } catch (parseErr) {
-      console.error('generateQuestions parse error:', parseErr, 'raw:', raw);
+      console.error('generateQuestions parse error, raw:', raw);
       return res.status(502).json({ error: 'AI returned an unparseable response. Please try again.' });
     }
 
-    return res.json({ questions });
+    return res.json({ questions, topic: effectiveTopic });
   } catch (err) {
     console.error('generateQuestions error:', err);
     return res.status(500).json({ error: 'Failed to generate questions.' });
@@ -99,10 +89,7 @@ Respond with ONLY valid JSON in this exact format, with no markdown fences and n
 async function explainDoubt(req, res) {
   try {
     const { question, roomId } = req.body;
-
-    if (!question) {
-      return res.status(400).json({ error: 'question is required.' });
-    }
+    if (!question) return res.status(400).json({ error: 'question is required.' });
 
     let noteText = '';
     if (roomId) {
@@ -111,13 +98,12 @@ async function explainDoubt(req, res) {
     }
 
     const prompt = `You are a friendly, patient tutor helping a student with a doubt.
-${noteText ? `\nFor context, here are the study group's notes on the current topic:\n${noteText}\n` : ''}
+${noteText ? `\nStudy group notes for context:\n${noteText.slice(0, 600)}\n` : ''}
 Student's question: ${question}
 
-Provide a clear, step-by-step explanation that resolves the student's doubt. Keep the tone encouraging and easy to follow.`;
+Provide a clear, step-by-step explanation. Use simple language, be encouraging, and structure your answer with numbered steps or short paragraphs.`;
 
-    const explanation = await groqClient.getCompletion(prompt);
-
+    const explanation = await groqClient.getCompletion(prompt, { maxTokens: 700 });
     return res.json({ explanation: explanation.trim() });
   } catch (err) {
     console.error('explainDoubt error:', err);
@@ -125,8 +111,4 @@ Provide a clear, step-by-step explanation that resolves the student's doubt. Kee
   }
 }
 
-module.exports = {
-  summarizeRoom,
-  generateQuestions,
-  explainDoubt
-};
+module.exports = { summarizeRoom, generateQuestions, explainDoubt };

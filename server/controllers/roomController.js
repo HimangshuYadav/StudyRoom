@@ -1,9 +1,6 @@
 const crypto = require('crypto');
 const Room = require('../models/Room');
 
-/**
- * Generates a random 6-character alphanumeric join code (uppercase + digits).
- */
 function generateJoinCode(length = 6) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let code = '';
@@ -14,9 +11,6 @@ function generateJoinCode(length = 6) {
   return code;
 }
 
-/**
- * Ensures the generated join code doesn't collide with an existing room.
- */
 async function generateUniqueJoinCode() {
   let code;
   let existing;
@@ -30,13 +24,11 @@ async function generateUniqueJoinCode() {
 async function createRoom(req, res) {
   try {
     const { name, topic } = req.body;
-
     if (!name || !topic) {
       return res.status(400).json({ error: 'Room name and topic are required.' });
     }
 
     const joinCode = await generateUniqueJoinCode();
-
     const room = new Room({
       name,
       topic,
@@ -44,10 +36,10 @@ async function createRoom(req, res) {
       createdBy: req.user.id,
       members: [req.user.id]
     });
-
     await room.save();
 
-    return res.status(201).json(room);
+    const populated = await room.populate('createdBy', 'name email');
+    return res.status(201).json(populated);
   } catch (err) {
     console.error('createRoom error:', err);
     return res.status(500).json({ error: 'Failed to create room.' });
@@ -57,27 +49,25 @@ async function createRoom(req, res) {
 async function joinRoom(req, res) {
   try {
     const { joinCode } = req.body;
-
     if (!joinCode) {
       return res.status(400).json({ error: 'joinCode is required.' });
     }
 
-    const room = await Room.findOne({ joinCode });
-
+    const room = await Room.findOne({ joinCode: joinCode.toUpperCase() });
     if (!room) {
-      return res.status(404).json({ error: 'Room not found.' });
+      return res.status(404).json({ error: 'Room not found. Please check the code.' });
     }
 
     const alreadyMember = room.members.some(
       (memberId) => memberId.toString() === req.user.id
     );
-
     if (!alreadyMember) {
       room.members.push(req.user.id);
       await room.save();
     }
 
-    return res.json(room);
+    const populated = await room.populate('createdBy', 'name email');
+    return res.json(populated);
   } catch (err) {
     console.error('joinRoom error:', err);
     return res.status(500).json({ error: 'Failed to join room.' });
@@ -87,17 +77,16 @@ async function joinRoom(req, res) {
 async function getRoomById(req, res) {
   try {
     const { id } = req.params;
-
-    const room = await Room.findById(id).populate('members', '-password');
+    const room = await Room.findById(id)
+      .populate('createdBy', 'name email')
+      .populate('members', 'name email');
 
     if (!room) {
       return res.status(404).json({ error: 'Room not found.' });
     }
-
     return res.json(room);
   } catch (err) {
     console.error('getRoomById error:', err);
-    // Handle malformed ObjectId gracefully as a 404 rather than a 500
     if (err.name === 'CastError') {
       return res.status(404).json({ error: 'Room not found.' });
     }
@@ -109,7 +98,8 @@ async function listPublicRooms(req, res) {
   try {
     const rooms = await Room.find()
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(50)
+      .populate('createdBy', 'name');
 
     return res.json(rooms);
   } catch (err) {
@@ -118,9 +108,28 @@ async function listPublicRooms(req, res) {
   }
 }
 
-module.exports = {
-  createRoom,
-  joinRoom,
-  getRoomById,
-  listPublicRooms
-};
+async function deleteRoom(req, res) {
+  try {
+    const { id } = req.params;
+    const room = await Room.findById(id);
+
+    if (!room) {
+      return res.status(404).json({ error: 'Room not found.' });
+    }
+
+    if (room.createdBy.toString() !== req.user.id) {
+      return res.status(403).json({ error: 'Only the creator can delete this room.' });
+    }
+
+    await Room.findByIdAndDelete(id);
+    return res.json({ message: 'Room deleted successfully.' });
+  } catch (err) {
+    console.error('deleteRoom error:', err);
+    if (err.name === 'CastError') {
+      return res.status(404).json({ error: 'Room not found.' });
+    }
+    return res.status(500).json({ error: 'Failed to delete room.' });
+  }
+}
+
+module.exports = { createRoom, joinRoom, getRoomById, listPublicRooms, deleteRoom };

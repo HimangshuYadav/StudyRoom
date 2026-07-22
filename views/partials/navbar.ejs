@@ -1,14 +1,21 @@
 <header class="app-header">
   <div class="header-container">
     <a href="/dashboard" class="logo">
-      <span class="logo-icon">✨</span>
+      <svg class="logo-icon icon icon-lg" aria-hidden="true"><use href="#icon-sparkle"/></svg>
       <span class="logo-text">Study<span class="highlight">Room</span></span>
     </a>
     <nav class="nav-links">
       <a href="/dashboard" class="nav-item">Dashboard</a>
       <a href="/login" class="nav-item" id="nav-login">Login</a>
       <a href="/signup" class="nav-item btn-primary-header" id="nav-signup">Sign Up</a>
-      <button class="nav-item btn-secondary-header" id="nav-logout" style="display: none;">Logout</button>
+      <div class="nav-user-badge" id="nav-user-badge" style="display:none;">
+        <div class="avatar" id="nav-avatar">?</div>
+        <span id="nav-username"></span>
+      </div>
+      <button class="nav-item btn-secondary-header" id="nav-logout" style="display:none;">
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#icon-logout"/></svg>
+        Logout
+      </button>
     </nav>
   </div>
 </header>

@@ -7,7 +7,7 @@ const JWT_EXPIRES_IN = '7d';
 
 function signToken(user) {
   return jwt.sign(
-    { id: user._id, email: user.email },
+    { id: user._id, email: user.email, name: user.name },
     process.env.JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
@@ -29,23 +29,14 @@ async function signup(req, res) {
     const salt = await bcrypt.genSalt(SALT_ROUNDS);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    const user = new User({
-      name,
-      email: email.toLowerCase(),
-      password: hashedPassword
-    });
-
+    const user = new User({ name, email: email.toLowerCase(), password: hashedPassword });
     await user.save();
 
     const token = signToken(user);
 
     return res.status(201).json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
+      user: { id: user._id, name: user.name, email: user.email }
     });
   } catch (err) {
     console.error('signup error:', err);
@@ -75,11 +66,7 @@ async function login(req, res) {
 
     return res.json({
       token,
-      user: {
-        id: user._id,
-        name: user.name,
-        email: user.email
-      }
+      user: { id: user._id, name: user.name, email: user.email }
     });
   } catch (err) {
     console.error('login error:', err);
@@ -87,7 +74,17 @@ async function login(req, res) {
   }
 }
 
-module.exports = {
-  signup,
-  login
-};
+async function getMe(req, res) {
+  try {
+    const user = await User.findById(req.user.id).select('-password');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    return res.json({ id: user._id, name: user.name, email: user.email });
+  } catch (err) {
+    console.error('getMe error:', err);
+    return res.status(500).json({ error: 'Failed to fetch user.' });
+  }
+}
+
+module.exports = { signup, login, getMe };

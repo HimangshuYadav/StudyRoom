@@ -1,32 +1,42 @@
-<%- include('partials/head') %>
+<%- include('partials/head', { title: 'Sign Up — StudyRoom' }) %>
 <%- include('partials/navbar') %>
 
 <main class="auth-container">
   <div class="auth-card">
     <div class="auth-header">
-      <h2>Create Account</h2>
-      <p>Join study groups and collaborate in real-time</p>
+      <div class="auth-icon">
+        <svg class="icon icon-2xl" aria-hidden="true"><use href="#icon-sparkle"/></svg>
+      </div>
+      <h2>Join the <em>StudyRoom</em><br>family.</h2>
+      <p>Free forever. Start collaborating in seconds.</p>
     </div>
-    <form id="signup-form" class="auth-form">
+
+    <form class="auth-form" id="signup-form" novalidate>
       <div class="form-group">
-        <label for="name">Full Name</label>
-        <input type="text" id="name" name="name" required placeholder="John Doe">
+        <label for="signup-name">Your Name</label>
+        <input type="text" id="signup-name" name="name"
+          placeholder="First & Last name" required autocomplete="name">
       </div>
       <div class="form-group">
-        <label for="email">Email Address</label>
-        <input type="email" id="email" name="email" required placeholder="name@domain.com">
+        <label for="signup-email">Email</label>
+        <input type="email" id="signup-email" name="email"
+          placeholder="you@example.com" required autocomplete="email">
       </div>
       <div class="form-group">
-        <label for="password">Password</label>
-        <input type="password" id="password" name="password" required placeholder="••••••••">
+        <label for="signup-password">Password</label>
+        <input type="password" id="signup-password" name="password"
+          placeholder="Min. 6 characters" minlength="6" required autocomplete="new-password">
       </div>
-      <button type="submit" class="btn-submit">Register</button>
+      <button type="submit" class="btn-submit" id="signup-btn">Create Account</button>
     </form>
+
     <div class="auth-footer">
-      <p>Already have an account? <a href="/login">Log in here</a></p>
+      Already a member? <a href="/login">Sign in
+        <svg class="icon icon-sm" aria-hidden="true"><use href="#icon-arrow-right"/></svg>
+      </a>
     </div>
   </div>
 </main>
 
-<script src="/js/auth.js"></script>
 <%- include('partials/footer') %>
+<script src="/js/auth.js"></script>

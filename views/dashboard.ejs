@@ -1,81 +1,113 @@
-<%- include('partials/head') %>
-<!-- Custom styling for dashboard page -->
-<link rel="stylesheet" href="/css/dashboard.css">
+<%- include('partials/head', { title: 'Dashboard — StudyRoom' }) %>
 <%- include('partials/navbar') %>
+<link rel="stylesheet" href="/css/dashboard.css">
 
-<main class="dashboard-wrapper">
-  <div class="dashboard-header-banner">
-    <h1>Study Room Dashboard</h1>
-    <p>Create a new workspace or enter an existing one using a 6-character code</p>
-  </div>
+<div id="toast-container"></div>
 
-  <div class="dashboard-grid">
-    <!-- Creation and Joining forms sidebar -->
-    <aside class="dashboard-sidebar">
-      <div class="control-card">
-        <h3>Create a Study Room</h3>
-        <form id="create-room-form">
-          <div class="form-group">
-            <label for="room-name">Room Name</label>
-            <input type="text" id="room-name" required placeholder="CS101 Study Session">
-          </div>
-          <div class="form-group">
-            <label for="room-topic">Topic</label>
-            <input type="text" id="room-topic" required placeholder="Data Structures">
-          </div>
-          <button type="submit" class="btn-sidebar">Create Room</button>
-        </form>
-      </div>
+<main class="dashboard-layout">
 
-      <div class="control-card">
-        <h3>Join via Code</h3>
-        <form id="join-room-form">
-          <div class="form-group">
-
-    <div class="join-label-row">
-        <label for="join-code">6-Character Code</label>
-
-        <span id="code-counter">
-            0/6
-        </span>
+  <!-- Hero -->
+  <section class="dashboard-hero">
+    <div>
+      <div class="hero-eyebrow">Your Study Hub</div>
+      <h1>Where scholars<br><em>gather & grow</em></h1>
+      <p class="hero-sub">Create a room, invite your crew, chat live, share notes, and let the AI tutor guide you through anything.</p>
     </div>
+    <div class="hero-deco" aria-hidden="true">
+      <svg class="icon icon-2xl"><use href="#icon-sparkle"/></svg>
+    </div>
+  </section>
 
-    <input
-        type="text"
-        id="join-code"
-        required
-        maxlength="6"
-        placeholder="ABC123">
+  <!-- Action Cards -->
+  <section class="action-grid">
 
-</div>
-          <button type="submit" class="btn-sidebar secondary">Join Room</button>
-        </form>
+    <!-- Create Room -->
+    <div class="action-card create">
+      <div class="action-card-header">
+        <div class="action-icon create">
+          <svg class="icon icon-lg"><use href="#icon-book"/></svg>
+        </div>
+        <div>
+          <h3>Open a new room</h3>
+        </div>
       </div>
-    </aside>
-
-    <!-- Main area showing list of active public rooms -->
-    <section class="rooms-section">
-
-    <div class="rooms-header-row">
-        <h2>Active Public Rooms</h2>
-
+      <p>Start a fresh study session. You'll get a shareable invite code to send your group.</p>
+      <form class="action-form" id="create-room-form">
         <input
-            type="text"
-            id="room-search"
-            placeholder="🔍 Search rooms..."
+          type="text"
+          id="room-name-input"
+          class="action-input"
+          placeholder="Room name — e.g. Physics Final"
+          maxlength="60"
+          required
+          autocomplete="off"
         >
+        <input
+          type="text"
+          id="room-topic-input"
+          class="action-input"
+          placeholder="Topic — e.g. Thermodynamics"
+          maxlength="80"
+          required
+          autocomplete="off"
+        >
+        <button type="submit" class="btn-action primary" id="create-room-btn">
+          <svg class="icon icon-sm"><use href="#icon-sparkle"/></svg>
+          Create Room
+        </button>
+      </form>
     </div>
 
-    <div id="rooms-list" class="rooms-grid-container">
-        <!-- Rendered dynamically by public/js/dashboard.js -->
-        <p class="placeholder-text">Loading active rooms...</p>
+    <!-- Join Room -->
+    <div class="action-card join">
+      <div class="action-card-header">
+        <div class="action-icon join">
+          <svg class="icon icon-lg"><use href="#icon-key"/></svg>
+        </div>
+        <div>
+          <h3>Join a room</h3>
+        </div>
+      </div>
+      <p>Have an invite code? Enter it below and you'll be dropped right into the session.</p>
+      <form class="action-form" id="join-code-form">
+        <input
+          type="text"
+          id="join-code-input"
+          class="action-input"
+          placeholder="6-character code"
+          maxlength="6"
+          autocomplete="off"
+          style="text-transform:uppercase; letter-spacing:0.12em; font-family:var(--font-mono); font-size:0.98rem;"
+        >
+        <button type="submit" class="btn-action teal" id="join-code-btn">
+          Enter Room
+          <svg class="icon icon-sm"><use href="#icon-arrow-right"/></svg>
+        </button>
+      </form>
     </div>
-    <p id="no-results-message" class="no-results">
-    🔍 No study rooms found.
-    </p>
-    </section>
-  </div>
+
+  </section>
+
+  <!-- Room Listings -->
+  <section class="rooms-section">
+    <div class="rooms-header">
+      <h2>All Rooms <span id="room-count-label"></span></h2>
+      <div class="search-box">
+        <span class="search-icon">
+          <svg class="icon icon-sm"><use href="#icon-search"/></svg>
+        </span>
+        <input type="text" id="room-search" placeholder="Search by name, topic…">
+      </div>
+    </div>
+    <div class="rooms-grid" id="rooms-grid">
+      <div class="rooms-loading">
+        <div class="spinner-ring"></div>
+        <p>Gathering rooms…</p>
+      </div>
+    </div>
+  </section>
+
 </main>
 
-<script src="/js/dashboard.js"></script>
 <%- include('partials/footer') %>
+<script src="/js/dashboard.js"></script>
