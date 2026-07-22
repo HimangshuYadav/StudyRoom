@@ -5,6 +5,10 @@
       <span class="logo-text">Study<span class="highlight">Room</span></span>
     </a>
     <nav class="nav-links">
+      <button class="nav-item btn-theme-toggle" id="theme-toggle" aria-label="Toggle theme" title="Toggle dark/light mode">
+        <svg class="icon icon-sm theme-icon-sun" aria-hidden="true"><use href="#icon-sun"/></svg>
+        <svg class="icon icon-sm theme-icon-moon" aria-hidden="true"><use href="#icon-moon"/></svg>
+      </button>
       <a href="/dashboard" class="nav-item">Dashboard</a>
       <a href="/login" class="nav-item" id="nav-login">Login</a>
       <a href="/signup" class="nav-item btn-primary-header" id="nav-signup">Sign Up</a>
@@ -19,3 +23,16 @@
     </nav>
   </div>
 </header>
+
+<script>
+  (function() {
+    const toggleBtn = document.getElementById('theme-toggle');
+    if (!toggleBtn) return;
+    toggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    });
+  })();
+</script>
