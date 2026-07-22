@@ -1,5 +1,7 @@
 const jwt = require('jsonwebtoken');
 
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretdevkeystudyroom123';
+
 /**
  * Express middleware to verify the JWT authorization token.
  * Validates the token and attaches the decoded payload to the request object.
@@ -21,7 +23,7 @@ function verifyToken(req, res, next) {
 
   try {
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, JWT_SECRET);
 
     // Attach decoded payload to request
     req.user = decoded;

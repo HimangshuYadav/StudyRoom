@@ -4,11 +4,12 @@ const bcrypt = require('bcryptjs');
 
 const SALT_ROUNDS = 10;
 const JWT_EXPIRES_IN = '7d';
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretdevkeystudyroom123';
 
 function signToken(user) {
   return jwt.sign(
     { id: user._id, email: user.email, name: user.name },
-    process.env.JWT_SECRET,
+    JWT_SECRET,
     { expiresIn: JWT_EXPIRES_IN }
   );
 }
@@ -40,7 +41,7 @@ async function signup(req, res) {
     });
   } catch (err) {
     console.error('signup error:', err);
-    return res.status(500).json({ error: 'Failed to sign up.' });
+    return res.status(500).json({ error: err.message || 'Failed to sign up.' });
   }
 }
 
@@ -70,7 +71,7 @@ async function login(req, res) {
     });
   } catch (err) {
     console.error('login error:', err);
-    return res.status(500).json({ error: 'Failed to log in.' });
+    return res.status(500).json({ error: err.message || 'Failed to log in.' });
   }
 }
 
