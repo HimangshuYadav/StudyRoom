@@ -435,6 +435,44 @@
   font-size: 0.71rem;
 }
 
+.badge-privacy {
+  font-size: 0.71rem;
+}
+
+.badge-privacy.public {
+  background: var(--sage-pale);
+  color: var(--sage-dark);
+  border-color: var(--sage-light);
+}
+
+.badge-privacy.private {
+  background: var(--clay-pale);
+  color: var(--clay-dark);
+  border-color: var(--clay-light);
+}
+
+.room-privacy-selector {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.4rem 0.2rem;
+  margin: 0.15rem 0;
+}
+
+.privacy-option {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--ink-700);
+  cursor: pointer;
+}
+
+.privacy-option input[type="radio"] {
+  accent-color: var(--clay);
+  cursor: pointer;
+}
+
 .room-card-footer {
   padding-top: 0.9rem;
   border-top: 1.5px solid var(--border);

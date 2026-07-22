@@ -23,7 +23,7 @@ async function generateUniqueJoinCode() {
 
 async function createRoom(req, res) {
   try {
-    const { name, topic } = req.body;
+    const { name, topic, isPublic } = req.body;
     if (!name || !topic) {
       return res.status(400).json({ error: 'Room name and topic are required.' });
     }
@@ -33,6 +33,7 @@ async function createRoom(req, res) {
       name,
       topic,
       joinCode,
+      isPublic: isPublic !== false, // default true unless explicitly set to false
       createdBy: req.user.id,
       members: [req.user.id]
     });
@@ -96,7 +97,17 @@ async function getRoomById(req, res) {
 
 async function listPublicRooms(req, res) {
   try {
-    const rooms = await Room.find()
+    const userId = req.user ? req.user.id : null;
+    const query = userId ? {
+      $or: [
+        { isPublic: true },
+        { isPublic: { $exists: false } },
+        { createdBy: userId },
+        { members: userId }
+      ]
+    } : { isPublic: true };
+
+    const rooms = await Room.find(query)
       .sort({ createdAt: -1 })
       .limit(50)
       .populate('createdBy', 'name');

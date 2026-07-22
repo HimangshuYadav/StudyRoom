@@ -1,6 +1,6 @@
 /**
  * StudyRoom — Dashboard logic
- * Handles room creation, joining, listing, deletion, and search.
+ * Handles room creation, joining, listing, deletion, privacy controls, and search.
  */
 
 // ── Utilities ─────────────────────────────────────────────────────────────────
@@ -101,7 +101,7 @@ function renderRooms(rooms) {
         <div class="empty-icon">
           <svg class="icon icon-2xl"><use href="#icon-building"/></svg>
         </div>
-        <p>No rooms yet — be the first to create one!</p>
+        <p>No rooms available — be the first to create one!</p>
       </div>`;
     return;
   }
@@ -113,6 +113,11 @@ function renderRooms(rooms) {
     const memberCount = Array.isArray(room.members) ? room.members.length : 0;
     const creatorName = room.createdBy?.name || 'Unknown';
     const timeAgo = room.createdAt ? formatTimeAgo(room.createdAt) : '';
+    const isPrivate = room.isPublic === false;
+
+    const privacyBadge = isPrivate
+      ? '<span class="badge badge-privacy private"><svg class="icon icon-sm"><use href="#icon-lock"/></svg> Private</span>'
+      : '<span class="badge badge-privacy public"><svg class="icon icon-sm"><use href="#icon-eye"/></svg> Public</span>';
 
     return `
     <div class="room-card" style="animation-delay: ${i * 0.05}s" data-room-id="${room._id}">
@@ -129,6 +134,7 @@ function renderRooms(rooms) {
       </div>
 
       <div class="room-meta">
+        ${privacyBadge}
         <span class="badge badge-members">
           <svg class="icon icon-sm"><use href="#icon-users"/></svg> ${memberCount} member${memberCount !== 1 ? 's' : ''}
         </span>
@@ -197,6 +203,8 @@ async function handleCreateRoom(e) {
   const token = getToken();
   const name  = document.getElementById('room-name-input').value.trim();
   const topic = document.getElementById('room-topic-input').value.trim();
+  const privacyRadio = document.querySelector('input[name="room-privacy"]:checked');
+  const isPublic = privacyRadio ? (privacyRadio.value !== 'private') : true;
   const btn   = document.getElementById('create-room-btn');
 
   if (!name || !topic) return showToast('Please enter a room name and topic.', 'error');
@@ -206,7 +214,7 @@ async function handleCreateRoom(e) {
     const res = await fetch('/api/rooms/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ name, topic }),
+      body: JSON.stringify({ name, topic, isPublic }),
     });
     const data = await res.json();
     if (!res.ok) {

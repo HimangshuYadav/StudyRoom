@@ -13,6 +13,10 @@ const roomSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  isPublic: {
+    type: Boolean,
+    default: true
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'

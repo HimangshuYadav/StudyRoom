@@ -51,6 +51,20 @@
           required
           autocomplete="off"
         >
+        <div class="room-privacy-selector">
+          <label class="privacy-option">
+            <input type="radio" name="room-privacy" value="public" checked>
+            <span>
+              <svg class="icon icon-sm"><use href="#icon-eye"/></svg> Public
+            </span>
+          </label>
+          <label class="privacy-option">
+            <input type="radio" name="room-privacy" value="private">
+            <span>
+              <svg class="icon icon-sm"><use href="#icon-lock"/></svg> Private (Code Only)
+            </span>
+          </label>
+        </div>
         <button type="submit" class="btn-action primary" id="create-room-btn">
           <svg class="icon icon-sm"><use href="#icon-sparkle"/></svg>
           Create Room
