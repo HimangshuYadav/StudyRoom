@@ -1,4 +1,5 @@
 const Message = require('../models/Message');
+const Note = require('../models/Note');
 
 // Track online users per room: Map<roomId, Map<socketId, {userId, userName}>>
 const roomOnlineUsers = new Map();
@@ -71,7 +72,31 @@ function registerChatHandlers(io) {
       socket.to(roomId).emit('userTyping', { userName, isTyping });
     });
 
-    // 4. Disconnect — clean up online list
+    // 4. Real-time Notes sync
+    socket.on('updateNotes', async ({ roomId, content, userId }) => {
+      // Broadcast live to all other clients in the room
+      socket.to(roomId).emit('notesUpdated', {
+        content: content || '',
+        updatedBy: socket.data.userName || 'Someone',
+      });
+
+      // Persist to DB
+      try {
+        await Note.findOneAndUpdate(
+          { roomId },
+          {
+            content: content || '',
+            lastEditedBy: userId || socket.data.userId,
+            updatedAt: Date.now(),
+          },
+          { upsert: true, setDefaultsOnInsert: true }
+        );
+      } catch (err) {
+        console.error('Error saving notes via socket:', err);
+      }
+    });
+
+    // 5. Disconnect — clean up online list
     socket.on('disconnect', () => {
       const { roomId, userName } = socket.data;
 

@@ -124,6 +124,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ── Socket.io ─────────────────────────────────────────────────────────────
   const socket = io();
+  window.roomSocket = socket;
 
   const msgContainer = document.getElementById('chat-messages');
   const form         = document.getElementById('chat-input-form');
